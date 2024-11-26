@@ -13,15 +13,15 @@ class MetaBuffer:
         if not os.path.exists(rag_dir):
             os.mkdir(rag_dir)
         self.rag = LightRAG(
-        working_dir= rag_dir,
-        llm_model_func=self.llm_model_func,  # Use Hugging Face model for text generation
-        # llm_model_name='../../models/Qwen2.5-Math-7B-Instruct',  # Model name from Hugging Face
-        embedding_func=EmbeddingFunc(
-            embedding_dim=3072,
-            max_token_size=8192,
-            func=self.embedding_func
+            working_dir= rag_dir,
+            llm_model_func=self.llm_model_func,  # Use Hugging Face model for text generation
+            # llm_model_name='../../models/Qwen2.5-Math-7B-Instruct',  # Model name from Hugging Face
+            embedding_func=EmbeddingFunc(
+                embedding_dim=3072,
+                max_token_size=8192,
+                func=self.embedding_func
+            )
         )
-    )
         
        
     async def llm_model_func(
