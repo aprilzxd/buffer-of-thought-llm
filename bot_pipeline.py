@@ -14,14 +14,14 @@ class Pipeline:
         self.local = False
         self.base_url = base_url
         self.model_id = model_id
-        if api_key is None:
+        if 'hf' in self.model_id:
             self.local = True
             self.pipeline = transformers.pipeline(
-        "text-generation",
-        model=self.model_id,
-        model_kwargs={"torch_dtype": torch.bfloat16},
-        device_map = 'auto'
-        )
+                "text-generation",
+                model=self.model_id,
+                model_kwargs={"torch_dtype": torch.bfloat16},
+                device_map = 'auto'
+            )
         else:
             self.api = True
             self.api_key = api_key
@@ -39,20 +39,17 @@ class Pipeline:
             return response
         else:
             messages = [
-            {"role": "system", "content": meta_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
+                {"role": "system", "content": meta_prompt},
+                {"role": "user", "content": user_prompt},
+            ]
 
             prompt = self.pipeline.tokenizer.apply_chat_template(
-                    messages, 
-                    tokenize=False, 
-                    add_generation_prompt=True
+                messages, 
+                tokenize=False, 
+                add_generation_prompt=True
             )
 
-            terminators = [
-                self.pipeline.tokenizer.eos_token_id,
-                self.pipeline.tokenizer.convert_tokens_to_ids("<|eot_id|>")
-            ]
+            terminators = self.pipeline.tokenizer.eos_token_id
 
             outputs = self.pipeline(
                 prompt,
@@ -75,13 +72,13 @@ class BoT:
         self.embedding_model = embedding_model
         self.base_url = base_url
         self.pipeline = Pipeline(self.model_id,self.api_key,self.base_url)
-        self.meta_buffer = MetaBuffer(self.model_id,self.embedding_model,self.api_key,base_url=self.base_url)
+        self.meta_buffer = MetaBuffer(self.model_id,self.embedding_model,self.api_key,base_url=self.base_url,rag_dir=rag_dir)
         self.user_input = user_input
         # Only for test use, stay tuned for our update
         self.problem_id = problem_id 
         self.need_check = need_check
-        with open("./math.txt") as f:
-            self.meta_buffer.rag.insert(f.read())
+        # with open("./math.txt") as f:
+        #     self.meta_buffer.rag.insert(f.read())
             
     def update_input(self,new_input):
         self.user_input = new_input

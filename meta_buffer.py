@@ -14,8 +14,8 @@ class MetaBuffer:
             os.mkdir(rag_dir)
         self.rag = LightRAG(
             working_dir= rag_dir,
-            llm_model_func=self.llm_model_func,  # Use Hugging Face model for text generation
-            # llm_model_name='../../models/Qwen2.5-Math-7B-Instruct',  # Model name from Hugging Face
+            llm_model_func=hf_model_complete, #self.llm_model_func,  # Use Hugging Face model for text generation
+            llm_model_name='../hf_models/Llama-3.2-1B', #'../../models/Qwen2.5-Math-7B-Instruct',  # Model name from Hugging Face
             embedding_func=EmbeddingFunc(
                 embedding_dim=3072,
                 max_token_size=8192,
