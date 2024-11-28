@@ -77,8 +77,8 @@ class BoT:
         # Only for test use, stay tuned for our update
         self.problem_id = problem_id 
         self.need_check = need_check
-        # with open("./math.txt") as f:
-        #     self.meta_buffer.rag.insert(f.read())
+        with open("./math.txt") as f:
+            self.meta_buffer.rag.insert(f.read())
             
     def update_input(self,new_input):
         self.user_input = new_input

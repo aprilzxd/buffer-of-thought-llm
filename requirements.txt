@@ -7,7 +7,7 @@
 # nano_vectordb
 # tenacity
 
-# Lastly, run: pip install --update transformers
+# Lastly, run: pip install --upgrade transformers
 
 accelerate==0.29.3
 aiohttp==3.8.4
