@@ -1,0 +1,66 @@
+## Thought Templates
+
+### Problem Type 1: Basic Arithmetic Problem
+
+**Definition**: Solve a basic arithmetic problem by parsing the problem statement to identify numbers and operations, and then apply each operation sequentially.
+
+**Quantitative Relationships**:
+- Use operations like addition, subtraction, multiplication, and division to compute the result.
+
+**Solution Strategy**: Parse the problem statement to extract numbers and operations, initialize a result variable, and apply each operation sequentially.
+
+**Example**: "What is 7 plus 5 minus 2?"
+
+**Solution**:
+- Parse numbers and operations: [7, 5, 2], ['+', '-']
+- Initialize result: result = 7
+- Apply operations:
+  - result += 5 (result = 12)
+  - result -= 2 (result = 10)
+
+Comprehensive equation:  
+7 + 5 - 2 = 10
+
+---
+
+### Problem Type 2: Word Problem
+
+**Definition**: Translate a word problem into mathematical expressions and solve it by extracting relevant quantities and operations from the text.
+
+**Quantitative Relationships**:
+- Convert text descriptions into mathematical expressions to find solutions.
+
+**Solution Strategy**: Extract quantities and operations from the text, construct a mathematical expression, and evaluate it.
+
+**Example**: "If you have 3 apples and buy 2 more, how many apples do you have?"
+
+**Solution**:
+- Extract quantities and operations: [3, 2], ['+']
+- Construct expression: 3 + 2
+- Evaluate expression: solution = 5
+
+Comprehensive equation:  
+3 + 2 = 5
+
+---
+
+### Problem Type 3: Algebraic Equation
+
+**Definition**: Solve a simple algebraic equation by defining variables, parsing the equation string into a symbolic equation, and solving it.
+
+**Quantitative Relationships**:
+- Use algebraic manipulation to isolate variables and find solutions.
+
+**Solution Strategy**: Define variables, parse the equation string into a symbolic equation, and solve for the variable(s).
+
+**Example**: "Solve 2x + 3 = 11"
+
+**Solution**:
+- Define variable: x
+- Parse equation: Eq(2x + 3, 11)
+- Solve for x: x = (11 - 3) / 2 = 4
+
+Comprehensive equation:  
+x = (11 - 3) / 2 = 4
+
+---
