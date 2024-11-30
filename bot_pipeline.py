@@ -1,12 +1,10 @@
 import transformers
 import torch
-import http.client
-import json
-from accelerate import infer_auto_device_map
 from meta_buffer_utilis import meta_distiller_prompt,extract_and_execute_code
 from test_templates import game24,checkmate,word_sorting
 from meta_buffer import MetaBuffer
 from openai import OpenAI
+
 
 class Pipeline:
     def __init__(self,model_id,api_key=None,base_url='https://api.openai.com/v1/'):
@@ -25,6 +23,7 @@ class Pipeline:
         else:
             self.api = True
             self.api_key = api_key
+
     def get_respond(self,meta_prompt,user_prompt):
         if self.api:
             client = OpenAI(api_key=self.api_key,base_url= self.base_url)
@@ -61,10 +60,8 @@ class Pipeline:
             )
             respond = outputs[0]["generated_text"][len(prompt):]
             return respond
-            
 
 
-        
 class BoT:
     def __init__(self, user_input,problem_id=0,api_key=None,model_id='gpt-4o-mini',embedding_model='text-embedding-3-large',need_check=False,base_url='https://api.openai.com/v1/',rag_dir=None):
         self.api_key = api_key
@@ -98,9 +95,7 @@ class BoT:
             self.thought_template = word_sorting
             
     def buffer_instantiation(self):
-        self.buffer_prompt = """
-        You are an expert in problem analysis and can apply previous problem-solving approaches to new issues. The user will provide a specific task description and a meta buffer that holds multiple thought templates that will help to solve the problem. Your goal is to first extract most relevant thought template from meta buffer, analyze the user's task and generate a specific solution based on the thought template. Give a final answer that is easy to extract from the text.
-        """
+        self.buffer_prompt = "You are an expert in problem analysis and can apply previous problem-solving approaches to new issues. The user will provide a specific task description and a meta buffer that holds multiple thought templates that will help to solve the problem. Your goal is to first extract most relevant thought template from meta buffer, analyze the user's task and generate a specific solution based on the thought template. Give a final answer that is easy to extract from the text."
         input = self.buffer_prompt + self.distilled_information
         self.result = self.meta_buffer.retrieve_and_instantiate(input)
         print(self.result)
@@ -111,9 +106,9 @@ class BoT:
         self.meta_buffer.dynamic_update(self.distilled_thought)
         
     def thought_distillation(self):
-        thought_distillation_prompt = """You are an expert in problem analysis and generalization. Your task is to follow the format of thought template below and distill a high-level thought template to solve similar problems:
-        Example thought template:
-        ### Problem Type 20: Solution Concentration Problem
+        thought_distillation_prompt = """You are an expert in problem analysis and generalization. Your task is to distill high-level thought templates that could be used to solve the provided problem and solution pairs. An example thought template for a solution concentration problem is provided below. It should be noted that you should only return the thought template without any extra output.
+Example thought template:
+### Problem Type 20: Solution Concentration Problem
 
 **Definition**: This type of problem involves the relationship between a solvent (water or another liquid), solute, solution, and concentration.
 
@@ -126,23 +121,18 @@ class BoT:
 **Example**: There is 50 grams of a 16% sugar solution. How much water needs to be added to dilute it to a 10% sugar solution?
 
 **Solution**:
-Using the formula:  
-50 × 16% ÷ 10% - 50 = 30 grams of water need to be added.
-
-It should be noted that you should only return the thought template without any extra output.
-        """
+Using the formula:
+50 × 16% ÷ 10% - 50 = 30 grams of water need to be added."""
         self.distilled_thought = self.pipeline.get_respond(thought_distillation_prompt, self.problem_solution_pair)
         print('Distilled thought: ',self.distilled_thought)
+
     def reasoner_instantiation(self):
         # Temporay using selection method to select answer extract method
         problem_id_list = [0,1,2]
-        self.instantiation_instruct = """
-You are an expert in problem analysis and can apply previous problem-solving approaches to new issues. The user will provide a specific task description and a thought template. Your goal is to analyze the user's task and generate a specific solution based on the thought template. If the instantiated solution involves Python code, only provide the code and let the compiler handle it. If the solution does not involve code, provide a final answer that is easy to extract from the text.
-It should be noted that all the python code should be within one code block, the answer should not include more than one code block! And strictly follow the thought-template to instantiate the python code but you should also adjust the input parameter according to the user input!
-        """
-        
-        self.formated_input = f"""
-Distilled information:
+        self.instantiation_instruct = """You are an expert in problem analysis and can apply previous problem-solving approaches to new issues. The user will provide a specific task description and a thought template. Your goal is to analyze the user's task and generate a specific solution based on the thought template. If the instantiated solution involves Python code, only provide the code and let the compiler handle it. If the solution does not involve code, provide a final answer that is easy to extract from the text.
+It should be noted that all the python code should be within one code block, the answer should not include more than one code block! And strictly follow the thought-template to instantiate the python code but you should also adjust the input parameter according to the user input!"""
+
+        self.formated_input = f"""Distilled information:
 {self.distilled_information}
 User Input:
 {self.user_input}
@@ -150,28 +140,22 @@ Thought template:
 {self.thought_template}
 
 Instantiated Solution:
-Please analyze the above user task description and thought template, and generate a specific, detailed solution. If the solution involves Python code, only provide the code. If not, provide a clear and extractable final answer.        
-        """
-        self.inspector_prompt = """
-You are an excellent python programming master who are proficient in analyzing and editing python code, and you are also good at understanding the real-world problem. Your task is:
+Please analyze the above user task description and thought template, and generate a specific, detailed solution. If the solution involves Python code, only provide the code. If not, provide a clear and extractable final answer."""
+
+        self.inspector_prompt = """You are an excellent python programming master who are proficient in analyzing and editing python code, and you are also good at understanding the real-world problem. Your task is:
 1. Analyze the given python code
 2. Edit the input code to make sure the edited code is correct and could run and solve the problem correctly.  
 Your respond should follow the format below:
 ```python
 ## Edited code here
-```
-        """
+```"""
         self.result = self.pipeline.get_respond(self.instantiation_instruct,self.formated_input)
         print(f'Instantiated reasoning result: {self.result}')
         if self.problem_id in problem_id_list:
             self.final_result, code_str = extract_and_execute_code(self.result)
             if self.need_check:
                 self.count = 0
-                self.inter_input = f"""
-                User_input:{self.user_input}
-                {code_str}
-                {self.final_result}
-                """
+                self.inter_input = f"User_input: {self.user_input}\n{code_str}\n{self.final_result}"
                 self.inter_result = self.final_result
                 while(('An error occurred' in self.inter_result) or (self.inter_result == '') or (self.inter_result == 'None')):
                     print('The code cannot be executed correctly, here we continue the edit phase:',self.inter_result)
@@ -179,11 +163,7 @@ Your respond should follow the format below:
                     self.inter_input = self.pipeline.get_respond(self.inspector_prompt,self.inter_input)
                     print(self.inter_input)
                     self.inter_result, inter_code_str = extract_and_execute_code(self.inter_input)
-                    self.inter_input = f"""
-                User_input:{self.user_input}
-                {inter_code_str}
-                The result of code execution: {self.inter_result}
-                """
+                    self.inter_input = f"User_input: {self.user_input}\n{inter_code_str}\nThe result of code execution: {self.inter_result}"
                     self.count = self.count + 1
                     if self.count > 3:
                         break
@@ -191,7 +171,6 @@ Your respond should follow the format below:
             print(f'The result of code execution: {self.final_result}')
         else:
             self.final_result = self.result 
-
     
     def bot_run(self):
         self.problem_distillation()
@@ -204,11 +183,4 @@ Your respond should follow the format below:
         self.buffer_instantiation()
         self.buffer_manager()
         print('Final results:',self.result)
-    
-    
-
-
-           
-            
-            
-        
+        return self.result
