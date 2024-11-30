@@ -63,7 +63,7 @@ class Pipeline:
 
 
 class BoT:
-    def __init__(self, user_input,problem_id=0,api_key=None,model_id='gpt-4o-mini',embedding_model='text-embedding-3-large',need_check=False,base_url='https://api.openai.com/v1/',rag_dir=None):
+    def __init__(self, user_input,problem_id=0,api_key=None,model_id='gpt-4o-mini',embedding_model='text-embedding-3-large',need_check=False,base_url='https://api.openai.com/v1/',rag_dir='./test'):
         self.api_key = api_key
         self.model_id = model_id
         self.embedding_model = embedding_model
@@ -74,12 +74,12 @@ class BoT:
         # Only for test use, stay tuned for our update
         self.problem_id = problem_id 
         self.need_check = need_check
-        with open("./math.txt") as f:
+        with open("./default_templates.txt") as f:
             self.meta_buffer.rag.insert(f.read())
-            
+
     def update_input(self,new_input):
         self.user_input = new_input
-        
+
     def problem_distillation(self):
         print(f'User prompt:{self.user_input}')
         self.distilled_information = self.pipeline.get_respond(meta_distiller_prompt, self.user_input)
@@ -93,18 +93,18 @@ class BoT:
             self.thought_template = checkmate
         elif self.problem_id == 2:
             self.thought_template = word_sorting
-            
+
     def buffer_instantiation(self):
         self.buffer_prompt = "You are an expert in problem analysis and can apply previous problem-solving approaches to new issues. The user will provide a specific task description and a meta buffer that holds multiple thought templates that will help to solve the problem. Your goal is to first extract most relevant thought template from meta buffer, analyze the user's task and generate a specific solution based on the thought template. Give a final answer that is easy to extract from the text."
         input = self.buffer_prompt + self.distilled_information
         self.result = self.meta_buffer.retrieve_and_instantiate(input)
         print(self.result)
-        
+
     def buffer_manager(self):
         self.problem_solution_pair = self.user_input + self.result
         self.thought_distillation()
         self.meta_buffer.dynamic_update(self.distilled_thought)
-        
+
     def thought_distillation(self):
         thought_distillation_prompt = """You are an expert in problem analysis and generalization. Your task is to distill high-level thought templates that could be used to solve the provided problem and solution pairs. An example thought template for a solution concentration problem is provided below. It should be noted that you should only return the thought template without any extra output.
 Example thought template:
@@ -149,6 +149,7 @@ Your respond should follow the format below:
 ```python
 ## Edited code here
 ```"""
+
         self.result = self.pipeline.get_respond(self.instantiation_instruct,self.formated_input)
         print(f'Instantiated reasoning result: {self.result}')
         if self.problem_id in problem_id_list:
@@ -171,16 +172,21 @@ Your respond should follow the format below:
             print(f'The result of code execution: {self.final_result}')
         else:
             self.final_result = self.result 
-    
+
     def bot_run(self):
         self.problem_distillation()
         self.buffer_retrieve()
         self.reasoner_instantiation()
         return self.final_result
-    
+
     def bot_inference(self):
         self.problem_distillation()
         self.buffer_instantiation()
         self.buffer_manager()
         print('Final results:',self.result)
+        return self.result
+    
+    def bot_test(self):
+        self.problem_distillation()
+        self.buffer_instantiation()
         return self.result
