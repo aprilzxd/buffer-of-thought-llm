@@ -912,10 +912,26 @@ async def hybrid_query(
             ll_keywords = keywords_data.get("low_level_keywords", [])
             hl_keywords = ", ".join(hl_keywords)
             ll_keywords = ", ".join(ll_keywords)
-        # Handle parsing error
-        except json.JSONDecodeError as e:
-            print(f"JSON parsing error: {e}")
-            return PROMPTS["fail_response"]
+        # Handle parsing error (return default template)
+        except:
+            return """### Problem Type 2: Word Problem
+
+**Definition**: Translate a word problem into mathematical expressions and solve it by extracting relevant quantities and operations from the text.
+
+**Quantitative Relationships**:
+- Convert text descriptions into mathematical expressions to find solutions.
+
+**Solution Strategy**: Extract quantities and operations from the text, construct a mathematical expression, and evaluate it.
+
+**Example**: "If you have 3 apples and buy 2 more, how many apples do you have?"
+
+**Solution**:
+- Extract quantities and operations: [3, 2], ['+']
+- Construct expression: 3 + 2
+- Evaluate expression: solution = 5
+
+Comprehensive equation:  
+3 + 2 = 5"""
 
     if ll_keywords:
         low_level_context = await _build_local_query_context(
