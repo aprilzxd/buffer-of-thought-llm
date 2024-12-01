@@ -169,9 +169,12 @@ def truncate_list_by_token_size(list_data: list, key: callable, max_token_size: 
         return []
     tokens = 0
     for i, data in enumerate(list_data):
-        tokens += len(encode_string_by_tiktoken(key(data)))
-        if tokens > max_token_size:
-            return list_data[:i]
+        try:
+            tokens += len(encode_string_by_tiktoken(key(data)))
+            if tokens > max_token_size:
+                return list_data[:i]
+        except:
+            continue
     return list_data
 
 
