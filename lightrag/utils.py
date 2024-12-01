@@ -174,7 +174,7 @@ def truncate_list_by_token_size(list_data: list, key: callable, max_token_size: 
             if tokens > max_token_size:
                 return list_data[:i]
         except:
-            continue
+            return list_data[:i]
     return list_data
 
 
