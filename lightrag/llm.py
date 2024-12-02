@@ -30,7 +30,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Callable, Any
 from .base import BaseKVStorage
 from .utils import compute_args_hash, wrap_embedding_func_with_attrs
-
+from loguru import logger
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
@@ -48,6 +48,7 @@ async def openai_complete_if_cache(
     api_key=None,
     **kwargs,
 ) -> str:
+    logger.info(f"model {model} \n\n base_url {base_url}")
     if api_key:
         os.environ["OPENAI_API_KEY"] = api_key
 
@@ -233,6 +234,8 @@ async def hf_model_if_cache(
     model, prompt, system_prompt=None, history_messages=[], **kwargs
 ) -> str:
     model_name = model
+    from loguru import logger 
+    logger.info(f" init one time  hf_model_if_cache: {model_name} ")
     hf_model, hf_tokenizer = initialize_hf_model(model_name)
     hashing_kv: BaseKVStorage = kwargs.pop("hashing_kv", None)
     messages = []
@@ -323,6 +326,94 @@ async def ollama_model_if_cache(
 
     return result
 
+
+from openai import AsyncOpenAI
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    retry=retry_if_exception_type((Exception))  # 可以根据具体需求修改异常类型
+)
+async def vllm_openai_format_model_if_cache(
+    model: str,
+    prompt: str,
+    system_prompt: str = None,
+    history_messages: list = [],
+    base_url: str = "http://10.10.100.15:8100/v1",
+    api_key: str = 1231234,
+    **kwargs
+) -> str:
+    """
+    使用 OpenAI 格式的 API 调用 vLLM 服务
+    
+    Args:
+        model: 模型名称
+        prompt: 用户输入的提示
+        system_prompt: 系统提示
+        history_messages: 历史消息列表
+        base_url: vLLM 服务的基础URL
+        api_key: API密钥（如果需要）
+        **kwargs: 其他参数
+    
+    Returns:
+        str: 模型的响应文本
+    """
+    # 移除不需要的参数
+    model = "llama3.1-8b"
+    kwargs.pop("max_tokens", None)
+    kwargs.pop("response_format", None)
+    
+    # 初始化 OpenAI 客户端
+    client = AsyncOpenAI(
+        base_url=base_url   ,
+        api_key=api_key )
+    
+    # 构建消息列表
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.extend(history_messages)
+    messages.append({"role": "user", "content": prompt})
+    
+    # 检查缓存
+    hashing_kv: BaseKVStorage = kwargs.pop("hashing_kv", None)
+    if hashing_kv is not None:
+        args_hash = compute_args_hash(model, messages)
+        if_cache_return = await hashing_kv.get_by_id(args_hash)
+        if if_cache_return is not None:
+            return if_cache_return["return"]
+    
+    try:
+        # 调用 API
+        response = await client.chat.completions.create(
+            model=model,
+            messages=messages,
+            **kwargs
+        )
+        
+        # 获取结果
+        result = response.choices[0].message.content
+        
+        # 更新缓存
+        if hashing_kv is not None:
+            await hashing_kv.upsert({
+                args_hash: {
+                    "return": result,
+                    "model": model
+                }
+            })
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error in vLLM API call: {str(e)}")
+        raise
 
 @lru_cache(maxsize=1)
 def initialize_lmdeploy_pipeline(
@@ -501,6 +592,21 @@ async def bedrock_complete(
     )
 
 
+
+
+async def ollama_model_complete(
+    prompt, system_prompt=None, history_messages=[], **kwargs
+) -> str:
+    model_name = kwargs["hashing_kv"].global_config["llm_model_name"]
+    return await ollama_model_if_cache(
+        model_name,
+        prompt,
+        system_prompt=system_prompt,
+        history_messages=history_messages,
+        **kwargs,
+    )
+
+
 async def hf_model_complete(
     prompt, system_prompt=None, history_messages=[], **kwargs
 ) -> str:
@@ -514,11 +620,11 @@ async def hf_model_complete(
     )
 
 
-async def ollama_model_complete(
+async def vllm_hf_model_complete(
     prompt, system_prompt=None, history_messages=[], **kwargs
 ) -> str:
     model_name = kwargs["hashing_kv"].global_config["llm_model_name"]
-    return await ollama_model_if_cache(
+    return await vllm_openai_format_model_if_cache(
         model_name,
         prompt,
         system_prompt=system_prompt,
@@ -548,6 +654,10 @@ async def openai_embedding(
     response = await openai_async_client.embeddings.create(
         model=model, input=texts, encoding_format="float"
     )
+    from loguru import logger
+    logger.info(f"openai_async_client: {openai_async_client}")
+    logger.info(f"response: {response}")
+    logger.info(f"response.data: {response.data}")
     return np.array([dp.embedding for dp in response.data])
 
 

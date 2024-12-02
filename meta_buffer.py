@@ -1,6 +1,6 @@
 import os
 from lightrag import LightRAG, QueryParam
-from lightrag.llm import openai_complete_if_cache,openai_embedding,hf_model_complete
+from lightrag.llm import openai_complete_if_cache,openai_embedding,hf_model_complete,vllm_hf_model_complete
 import numpy as np
 from lightrag.utils import EmbeddingFunc
 
@@ -14,10 +14,11 @@ class MetaBuffer:
             os.mkdir(rag_dir)
         self.rag = LightRAG(
             working_dir= rag_dir,
-            llm_model_func=hf_model_complete, #self.llm_model_func,  # Use Hugging Face model for text generation
+            # llm_model_func=hf_model_complete, #self.llm_model_func,  # Use Hugging Face model for text generation
+            llm_model_func=vllm_hf_model_complete,
             llm_model_name=self.llm, # '../hf_models/Llama-3.2-1B', #'../../models/Qwen2.5-Math-7B-Instruct', # Model name from Hugging Face
             embedding_func=EmbeddingFunc(
-                embedding_dim=3072,
+                embedding_dim=1024,
                 max_token_size=8192,
                 func=self.embedding_func
             )
@@ -35,11 +36,18 @@ class MetaBuffer:
         )
 
     async def embedding_func(self, texts: list[str]) -> np.ndarray:
-        return await openai_embedding(
+
+        # return await openai_embedding(
+        #     texts,
+        #     model= self.embedding_model,
+        #     api_key= self.api_key,
+        #     base_url= self.base_url
+        # )
+        return await openai_embedding( 
             texts,
-            model= self.embedding_model,
-            api_key= self.api_key,
-            base_url= self.base_url
+            model= "bge-m3",
+            api_key= "1231231",
+            base_url= "http://10.10.100.15:9997/v1"
         )
 
     def retrieve_and_instantiate(self,input):

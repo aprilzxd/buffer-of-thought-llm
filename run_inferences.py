@@ -4,6 +4,23 @@ import argparse
 import os
 import datetime
 from validation import check_answer, validator
+from loguru import logger
+from tqdm import tqdm
+import sys
+
+# 配置日志
+logger.remove()  # 移除默认的处理器
+logger.add(
+    sys.stderr,
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    level="INFO"
+)
+logger.add(
+    "logs/run_inferences_{time}.log",
+    rotation="500 MB",
+    level="DEBUG"
+)
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--llm_model',type=str,default='gpt-4o-mini',help='Model id of LLMs')
@@ -23,44 +40,105 @@ rag_dir = args.rag_dir
 run_test = args.run_test
 distill_correct = args.distill_correct
 
+logger.info("Starting script with parameters:")
+logger.info(f"LLM Model: {llm_model}")
+logger.info(f"Embedding Model: {embedding_model}")
+logger.info(f"Base URL: {base_url}")
+logger.info(f"RAG Directory: {rag_dir}")
+logger.info(f"Run Test: {run_test}")
+logger.info(f"Distill Correct: {distill_correct}")
+
 prompt = "Below is an instruction that describes a task. Write a response that appropriately completes the request."
 data_dir = 'gsm8k/train.jsonl' if not run_test else 'gsm8k/test.jsonl'
 output_name = 'train' if not run_test else 'test'
 now = datetime.datetime.now()
 timestamp_str = now.strftime("%Y-%m-%d-%H:%M:%S")
 output_dir = 'inference_results'
+
+logger.info(f"Using data directory: {data_dir}")
+logger.info(f"Output name: {output_name}")
+logger.info(f"Timestamp: {timestamp_str}")
+
 if not os.path.exists(output_dir):
+    logger.info(f"Creating output directory: {output_dir}")
     os.makedirs(output_dir)
 
-bot = BoT(
-    user_input= None, 
-    api_key = api_key,
-    model_id = llm_model,
-    embedding_model = embedding_model,
-    base_url = base_url,
-    rag_dir = rag_dir
-)
+try:
+    logger.info("Initializing BoT instance...")
+    bot = BoT(
+        user_input=None, 
+        api_key=api_key,
+        model_id=llm_model,
+        embedding_model=embedding_model,
+        base_url=base_url,
+        rag_dir=rag_dir
+    )
+    logger.success("BoT initialization successful")
+except Exception as e:
+    logger.error(f"Failed to initialize BoT: {str(e)}")
+    raise
 
-for line in (open(data_dir)):
-    input = json.loads(line)['question']
-    user_input = prompt + input
-    bot.update_input(user_input)
-    result = bot.bot_test()
-    # Dyanmic update strategy: only update metabuffer when the template is new and answer is correct
-    if not run_test and distill_correct:
-        if check_answer(json.loads(line)['ans'],result):
-            print("@@@@ Selective update strategy @@@@")
-            bot.bot_update()
-    if not run_test and not distill_correct:
-        print("&&&& Naive update strategy &&&&")
-        bot.bot_update()
-    tmp = {'input':input,'result':result}
-    with open(f'{output_dir}/GSM8K_{output_name}_{timestamp_str}.jsonl', 'a+', encoding='utf-8') as file:
-        json_str = json.dumps(tmp)
-        file.write(json_str + '\n')
+# 计算总行数用于进度条
+total_lines = sum(1 for _ in open(data_dir))
+logger.info(f"Total number of examples to process: {total_lines}")
 
+correct_count = 0
+total_count = 0
 
-# Evaluation
+# 使用tqdm创建进度条
+with tqdm(total=total_lines, desc="Processing examples") as pbar:
+    for line in open(data_dir):
+        total_count += 1
+        try:
+            input_data = json.loads(line)
+            input_question = input_data['question']
+            user_input = prompt + input_question
+            
+            logger.debug(f"Processing example {total_count}/{total_lines}")
+            logger.debug(f"Input question: {input_question}")
+            
+            bot.update_input(user_input)
+            result = bot.bot_test()
+            
+            # 动态更新策略
+            if not run_test:
+                if distill_correct:
+                    if check_answer(input_data['ans'], result):
+                        logger.info("Answer correct - updating meta buffer")
+                        correct_count += 1
+                        bot.bot_update()
+                else:
+                    logger.debug("Using naive update strategy")
+                    bot.bot_update()
+            
+            # 保存结果
+            tmp = {'input': input_question, 'result': result}
+            output_file = f'{output_dir}/GSM8K_{output_name}_{timestamp_str}.jsonl'
+            with open(output_file, 'a+', encoding='utf-8') as file:
+                json_str = json.dumps(tmp)
+                file.write(json_str + '\n')
+            
+            pbar.update(1)
+            
+        except Exception as e:
+            logger.error(f"Error processing example {total_count}: {str(e)}")
+            continue
+
+# 记录最终统计信息
+logger.info(f"Processing completed. Total examples: {total_count}")
+if distill_correct:
+    accuracy = (correct_count / total_count) * 100
+    logger.info(f"Correct answers: {correct_count}")
+    logger.info(f"Accuracy: {accuracy:.2f}%")
+
+# 评估
+logger.info("Starting evaluation...")
 result_path = f'{output_dir}/GSM8K_{output_name}_{timestamp_str}.jsonl'
 eval_path = f'{output_dir}/GSM8K_{output_name}_{timestamp_str}_eval.txt'
-validator(data_dir, result_path, eval_path)
+try:
+    validator(data_dir, result_path, eval_path)
+    logger.success("Evaluation completed successfully")
+except Exception as e:
+    logger.error(f"Error during evaluation: {str(e)}")
+
+logger.info("Script execution completed")

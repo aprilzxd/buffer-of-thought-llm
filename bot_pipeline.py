@@ -5,14 +5,16 @@ from test_templates import game24,checkmate,word_sorting
 from meta_buffer import MetaBuffer
 from openai import OpenAI
 
-
+from loguru import logger
 class Pipeline:
     def __init__(self,model_id,api_key=None,base_url='https://api.openai.com/v1/'):
         self.api = False
         self.local = False
         self.base_url = base_url
         self.model_id = model_id
-        if 'hf' in self.model_id:
+        logger.info(f"model_id: {self.model_id}")
+        
+        if 'Meta' in self.model_id:
             self.local = True
             self.pipeline = transformers.pipeline(
                 "text-generation",
