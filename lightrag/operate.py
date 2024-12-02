@@ -914,6 +914,7 @@ async def hybrid_query(
             ll_keywords = ", ".join(ll_keywords)
         # Handle parsing error (return default template)
         except:
+            print("000000000000000000000000")
             general_template = """### Problem Type 2: Word Problem
 **Definition**: Translate a word problem into mathematical expressions and solve it by extracting relevant quantities and operations from the text.
 
