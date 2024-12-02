@@ -70,6 +70,6 @@ with open(f'{output_dir}/GSM8K_{output_name}_{timestamp_str}_eval.txt', 'w') as 
         output_file.write(f"{eval_result} | {int(true_y)} | {pred}\n")
 
 
-print(f'Total number:{total},Correct number:{correct},Accuracy:{correct/total}')
-output_file.write(f'Total number:{total},Correct number:{correct},Accuracy:{correct/total}')
+    print(f'Total number:{total},Correct number:{correct},Accuracy:{correct/total}')
+    output_file.write(f'Total number:{total},Correct number:{correct},Accuracy:{correct/total}')
 
