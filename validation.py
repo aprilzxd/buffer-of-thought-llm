@@ -1,21 +1,10 @@
 import json
-import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--result_path',type=str)
-parser.add_argument('--run_test',type=str,default=False,help='Whether this is a test run that doesn\'t update the meta buffer')
-
-if __name__ == "__main__":
-    args = parser.parse_args()
-    result_path = args.result_path
-    run_test = args.run_test
-
-    data_dir = 'gsm8k/train.jsonl' if not run_test else 'gsm8k/test.jsonl'
-
+def validator(data_path, result_filepath, output_filepath):
     correct = 0
     total = 0
-    with open('tmp.jsonl', 'w') as output_file:
-        for line_y, line_pred in zip(open(data_dir), open(result_path)):
+    with open(output_filepath, 'w') as output_file:
+        for line_y, line_pred in zip(open(data_path), open(result_filepath)):
             result = json.loads(line_pred)['result']
             true_y = json.loads(line_y)['ans']
             pred = result.split('\n')[-1]
