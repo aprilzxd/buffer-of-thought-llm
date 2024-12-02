@@ -190,3 +190,6 @@ Your respond should follow the format below:
         self.problem_distillation()
         self.buffer_instantiation()
         return self.result
+
+    def bot_update(self):
+        self.buffer_manager()
