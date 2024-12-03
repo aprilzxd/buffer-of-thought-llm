@@ -7,10 +7,11 @@ from openai import OpenAI
 
 from loguru import logger
 class Pipeline:
-    def __init__(self,model_id,api_key=None,base_url='https://api.openai.com/v1/'):
-        self.api = False
+    def __init__(self,model_id,api_key=None,base_url='https://api.openai.com/v1/',local_api=True):
+        self.api = local_api
         self.local = False
-        self.base_url = base_url
+        self.bot_base_url = base_url
+        self.bot_api_key = api_key
         self.model_id = model_id
         logger.info(f"model_id: {self.model_id}")
         
@@ -24,11 +25,11 @@ class Pipeline:
             )
         else:
             self.api = True
-            self.api_key = api_key
+            self.bot_api_key = api_key
 
     def get_respond(self,meta_prompt,user_prompt):
         if self.api:
-            client = OpenAI(api_key=self.api_key,base_url= self.base_url)
+            client = OpenAI(api_key=self.bot_api_key,base_url= self.bot_base_url)
             completion = client.chat.completions.create(
                 model=self.model_id,
                 messages=[
@@ -65,13 +66,15 @@ class Pipeline:
 
 
 class BoT:
-    def __init__(self, user_input,problem_id=0,api_key=None,model_id='gpt-4o-mini',embedding_model='text-embedding-3-large',need_check=False,base_url='https://api.openai.com/v1/',rag_dir='./test'):
-        self.api_key = api_key
+    def __init__(self, user_input,problem_id=0,local_api_key=None,local_base_url="http:/10.10.100.15:8100/v1",model_id='gpt-4o-mini',embedding_model='text-embedding-3-large',need_check=False,openai_api_key=None,openai_base_url='https://api.openai.com/v1/',rag_dir='./test'):
+        self.bot_api_key = local_api_key
         self.model_id = model_id
         self.embedding_model = embedding_model
-        self.base_url = base_url
-        self.pipeline = Pipeline(self.model_id,self.api_key,self.base_url)
-        self.meta_buffer = MetaBuffer(self.model_id,self.embedding_model,self.api_key,base_url=self.base_url,rag_dir=rag_dir)
+        self.bot_base_url = local_base_url
+        self.pipeline = Pipeline(self.model_id,api_key=self.bot_api_key,base_url=self.bot_base_url,local_api=True)
+
+        self.meta_buffer = MetaBuffer(self.model_id,self.embedding_model,api_key=openai_api_key,base_url=openai_base_url,rag_dir=rag_dir)
+
         self.user_input = user_input
         # Only for test use, stay tuned for our update
         self.problem_id = problem_id 
