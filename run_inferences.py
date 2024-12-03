@@ -30,8 +30,8 @@ parser.add_argument('--openai_base_url',type=str,default='https://api.openai.com
 parser.add_argument('--local_api_key',type=str,help='The api key of user')
 parser.add_argument('--local_base_url',type=str,default='http://10.10.100.15:8100/v1',help='We also support Open AI-like chat/embeddings APIs')
 parser.add_argument('--rag_dir',type=str,default='./math',help='The path to save the meta buffer')
-parser.add_argument('--run_test',type=str,default=False,help='Whether this is a test run that doesn\'t update the meta buffer')
-parser.add_argument('--distill_correct',type=str,default=False,help='Whether we only distill the template only when the generated solution is correct.')
+parser.add_argument('--run_test',action='store_true',default=False,help='Whether this is a test run that doesn\'t update the meta buffer')
+parser.add_argument('--distill_correct',action='store_true',default=False,help='Whether we only distill the template only when the generated solution is correct.')
 parser.add_argument('--local_llm_model_id',type=str,default='llama-3.1-8b',help='The model id of local LLM')
 parser.add_argument('--local_llm_model_path',type=str,default='../hf_models/Meta-Llama-3___1-8B-Instruct',help='The path to the local LLM model')
 

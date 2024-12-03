@@ -49,6 +49,10 @@ def always_get_an_event_loop() -> asyncio.AbstractEventLoop:
         asyncio.set_event_loop(loop)
     return loop
 
+def close_event_loop(loop: asyncio.AbstractEventLoop):
+    if not loop.is_closed():
+        loop.close()
+
 
 @dataclass
 class LightRAG:
@@ -159,7 +163,12 @@ class LightRAG:
 
     def insert(self, string_or_strings):
         loop = always_get_an_event_loop()
-        return loop.run_until_complete(self.ainsert(string_or_strings))
+        try:
+            return loop.run_until_complete(self.ainsert(string_or_strings))
+        finally:
+            # Close the loop after the task has been completed
+            if loop.is_running() is False:
+                close_event_loop(loop)
 
     async def ainsert(self, string_or_strings):
         try:
@@ -241,7 +250,12 @@ class LightRAG:
 
     def query(self, query: str, param: QueryParam = QueryParam()):
         loop = always_get_an_event_loop()
-        return loop.run_until_complete(self.aquery(query, param))
+        try:
+            return loop.run_until_complete(self.aquery(query, param))
+        finally:
+            # Close the loop after the task has been completed
+            if loop.is_running() is False:
+                close_event_loop(loop)
 
     async def aquery(self, query: str, param: QueryParam = QueryParam()):
         if param.mode == "local":
