@@ -215,7 +215,7 @@ class LightRAG:
             )
             if maybe_new_kg is None:
                 logger.warning("No new entities and relationships found")
-                return
+                # return
             self.chunk_entity_relation_graph = maybe_new_kg
 
             await self.full_docs.upsert(new_docs)
