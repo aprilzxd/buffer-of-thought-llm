@@ -88,9 +88,9 @@ class BoT:
         self.user_input = new_input
 
     def problem_distillation(self):
-        print(f'User prompt:{self.user_input}')
+        logger.info(f'User prompt:{self.user_input}')
         self.distilled_information = self.pipeline.get_respond(meta_distiller_prompt, self.user_input)
-        print(f'Distilled information:{self.distilled_information}')
+        logger.info(f'Distilled information:{self.distilled_information}')
 
     def buffer_retrieve(self):
         # For initial test use, we will later update the embedding retrieval version to support more, trail version
@@ -105,7 +105,7 @@ class BoT:
         self.buffer_prompt = "You are an expert in problem analysis and can apply previous problem-solving approaches to new issues. The user will provide a specific task description and a meta buffer that holds multiple thought templates that will help to solve the problem. Your goal is to first extract most relevant thought template from meta buffer, analyze the user's task and generate a specific solution based on the thought template. Give a final answer that is easy to extract from the text."
         input = self.buffer_prompt + self.distilled_information
         self.result = self.meta_buffer.retrieve_and_instantiate(input)
-        print(self.result)
+        logger.info(self.result)
 
     def buffer_manager(self):
         self.problem_solution_pair = self.user_input + self.result
@@ -162,7 +162,7 @@ Your respond should follow the format below:
 ```"""
 
         self.result = self.pipeline.get_respond(self.instantiation_instruct,self.formated_input)
-        print(f'Instantiated reasoning result: {self.result}')
+        logger.info(f'Instantiated reasoning result: {self.result}')
         if self.problem_id in problem_id_list:
             self.final_result, code_str = extract_and_execute_code(self.result)
             if self.need_check:
@@ -170,10 +170,10 @@ Your respond should follow the format below:
                 self.inter_input = f"User_input: {self.user_input}\n{code_str}\n{self.final_result}"
                 self.inter_result = self.final_result
                 while(('An error occurred' in self.inter_result) or (self.inter_result == '') or (self.inter_result == 'None')):
-                    print('The code cannot be executed correctly, here we continue the edit phase:',self.inter_result)
-                    print('The problem code is:',code_str)
+                    logger.info('The code cannot be executed correctly, here we continue the edit phase:',self.inter_result)
+                    logger.info('The problem code is:',code_str)
                     self.inter_input = self.pipeline.get_respond(self.inspector_prompt,self.inter_input)
-                    print(self.inter_input)
+                    logger.info(self.inter_input)
                     self.inter_result, inter_code_str = extract_and_execute_code(self.inter_input)
                     self.inter_input = f"User_input: {self.user_input}\n{inter_code_str}\nThe result of code execution: {self.inter_result}"
                     self.count = self.count + 1

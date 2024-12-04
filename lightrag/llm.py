@@ -49,7 +49,7 @@ async def openai_complete_if_cache(
     **kwargs,
 ) -> str:
     
-    logger.error(f"model {model} \n\n base_url {base_url}")
+    logger.info(f"post openai_complete_if_cache model {model} \n\n base_url {base_url}")
 
     if api_key:
         os.environ["OPENAI_API_KEY"] = api_key

@@ -13,6 +13,39 @@ import asyncio
 import signal
 
 
+class LoguruProgress:
+    def __init__(self, total, current=0, desc="Processing"):
+        self.total = total
+        self.current = current
+        self.desc = desc
+        self.postfix = {}
+        logger.info(f"Starting {desc}: {self.current}/{total}")
+        
+    def update(self, n=1):
+        self.current += n
+        percentage = (self.current / self.total) * 100
+        bar_length = 30
+        filled_length = int(bar_length * self.current / self.total)
+        
+        bar = '<green>█</green>' * filled_length + '<white>░</white>' * (bar_length - filled_length)
+        
+        postfix_str = ' '.join(
+            f"<cyan>{k}</cyan>=<yellow>{v}</yellow>" 
+            for k, v in self.postfix.items()
+        )
+        
+        logger.info(
+            f"{self.desc}: <blue>{self.current}/{self.total}</blue> "
+            f"|{bar}| <magenta>{percentage:.1f}%</magenta> {postfix_str}"
+        )
+    
+    def set_postfix(self, **kwargs):
+        self.postfix = kwargs
+    
+    def close(self):
+        logger.success(f"✨ Completed {self.desc}: {self.current}/{self.total} ✨")
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--embedding_model',type=str,default='text-embedding-3-large',help='Model id of embedding model')
 parser.add_argument('--openai_api_key',type=str,help='The api key of user')
@@ -21,7 +54,7 @@ parser.add_argument('--local_api_key',type=str,help='The api key of user')
 parser.add_argument('--local_base_url',type=str,default='http://10.10.100.15:8100/v1',help='We also support Open AI-like chat/embeddings APIs')
 parser.add_argument('--rag_dir',type=str,default='./math',help='The path to save the meta buffer')
 parser.add_argument('--run_test',action='store_true',default=False,help='Whether this is a test run that doesn\'t update the meta buffer')
-parser.add_argument('--distill_correct',action='store_true',default=False,help='Whether we only distill the template only when the generated solution is correct.')
+parser.add_argument('--distill_correct',default=False,help='Whether we only distill the template only when the generated solution is correct.')
 parser.add_argument('--local_llm_model_id',type=str,default='llama-3.1-8b',help='The model id of local LLM')
 
 args = parser.parse_args()
@@ -114,15 +147,7 @@ def cleanup_resources():
     except Exception as e:
         logger.exception(f"Error cleaning up HTTP client: {e}")
 
-def signal_handler(signum, frame):
-    """处理程序终止信号"""
-    logger.info("Received termination signal. Cleaning up...")
-    cleanup_resources()
-    sys.exit(0)
 
-# 注册信号处理器
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
 
 try:
     # 确保在开始时有一个新的事件循环
@@ -166,19 +191,17 @@ if os.path.exists(state_file):
         correct_count = state_data.get('correct_count', 0)
         logger.info(f"Resuming from line {start_line}")
 
+# 使用 LoguruProgress 并传递 start_line 作为 current
+pbar = LoguruProgress(
+    total=total_lines,
+    current=start_line,  # 传递当前行数
+    desc="Processing examples"
+)
+
 try:
     # 使用单个 with 语句同时管理所有文件操作
     with open(data_dir, 'r') as input_file, \
          open(output_file, 'a+', encoding='utf-8') as output_f:
-        
-        # 创建进度条，使用字典而不是列表来存储postfix
-        pbar = tqdm(
-            total=total_lines,
-            initial=start_line,
-            desc="Processing examples",
-            ncols=100,
-            bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] {postfix}"
-        )
         
         # 从状态文件加载之前的进度
         previous_correct = correct_count  # 保存之前的正确数量
@@ -198,15 +221,8 @@ try:
         for line_number, line in enumerate(input_file, start=1):  # 从1开始计数
             if line_number <= start_line:  # 使用 <= 而不是 <
                 continue  # 跳过已处理的行
-            
-            # 每处理100个样本进行一次清理
-            if line_number % 100 == 0:
-                cleanup_resources()
-                # 重新创建事件循环
-                if asyncio.get_event_loop().is_closed():
-                    asyncio.set_event_loop(asyncio.new_event_loop())
-                logger.debug(f"Performed resource cleanup at line {line_number}")
-            
+                
+            logger.debug(f"processing line_number {line_number}")
             total_count += 1
             try:
                 # 添加输入数据验证
@@ -241,7 +257,6 @@ try:
                     result = bot.bot_test()
                 except Exception as e:
                     logger.error(f"Error in bot_test at line {line_number}: {str(e)}")
-                    cleanup_resources()  # 发生错误时立即清理
                     result = bot.bot_test()
                 
                 if result is None:
@@ -289,10 +304,13 @@ try:
                     'line_number': line_number  # 添加行号信息
                 }
                 
+                logger.info(f"tmp tmp_dict {tmp}")
                 # 写入结果
                 json_str = json.dumps(tmp)
                 output_f.write(json_str + '\n')
                 output_f.flush()  # 确保立即写入
+                
+
                 
                 # 更新进度条显示
                 pbar.set_postfix(
@@ -312,7 +330,6 @@ try:
                 
             except Exception as e:
                 logger.exception(f"Error processing example {line_number}")
-                cleanup_resources()  # 发生错误时立即清理
                 continue
             
             # 定期刷新文件缓冲区
@@ -324,12 +341,11 @@ try:
 except Exception as e:
     logger.error(f"Fatal error in main process: {str(e)}")
     logger.exception("Full traceback:")
-    cleanup_resources()  # 发生致命错误时清理
     raise
 
 finally:
     # 确保在程序结束时清理所有资源
-    cleanup_resources()
+    logger.info("process all")
 
 # 记录最终统计信息
 logger.info(f"Final Statistics:")

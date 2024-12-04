@@ -65,12 +65,12 @@ class MetaBuffer:
 
         # Perform naive search
         response = self.rag.query(input, param=QueryParam(mode="hybrid"))
-        print(response)
+        logger.info(response)
         if self.extract_similarity_decision(response):
-            print('MetaBuffer Updated!')
+            logger.info('MetaBuffer Updated!')
             self.rag.insert(thought_template)
         else:
-            print('No need to Update!')
+            logger.info('No need to Update!')
 
     def extract_similarity_decision(self,text):
         """
