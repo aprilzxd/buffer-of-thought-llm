@@ -3,9 +3,14 @@ from lightrag import LightRAG, QueryParam
 from lightrag.llm import openai_complete_if_cache,openai_embedding,hf_model_complete,vllm_hf_model_complete
 import numpy as np
 from lightrag.utils import EmbeddingFunc
-
+from loguru import logger
 class MetaBuffer:
     def __init__(self,llm_model,embedding_model,api_key=None,base_url="https://api.openai.com/v1/",rag_dir='./test'):
+        logger.info(f'meta_buffer llm_model: {llm_model}')
+        logger.info(f'meta_buffer embedding_model: {embedding_model}')
+        logger.info(f'meta_buffer api_key: {api_key}')
+        logger.info(f'meta_buffer base_url: {base_url}')
+        logger.info(f'meta_buffer rag_dir: {rag_dir}')
         self.api_key = api_key
         self.llm = llm_model
         self.embedding_model = embedding_model
@@ -15,7 +20,7 @@ class MetaBuffer:
         self.rag = LightRAG(
             working_dir= rag_dir,
             # llm_model_func=hf_model_complete, #self.llm_model_func,  # Use Hugging Face model for text generation
-            llm_model_func=vllm_hf_model_complete,
+            llm_model_func=self.llm_model_func,
             llm_model_name=self.llm, # '../hf_models/Llama-3.2-1B', #'../../models/Qwen2.5-Math-7B-Instruct', # Model name from Hugging Face
             embedding_func=EmbeddingFunc(
                 embedding_dim=1024,

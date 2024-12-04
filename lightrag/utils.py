@@ -2,6 +2,7 @@ import asyncio
 import html
 import json
 import logging
+from loguru import logger
 import os
 import re
 from dataclasses import dataclass
@@ -15,22 +16,21 @@ import tiktoken
 
 ENCODER = None
 
-logger = logging.getLogger("lightrag")
+
 
 
 def set_logger(log_file: str):
-    logger.setLevel(logging.DEBUG)
+    # 确保日志目录存在
+    log_dir = os.path.dirname(log_file)
+    os.makedirs(log_dir, exist_ok=True)
 
-    file_handler = logging.FileHandler(log_file)
-    file_handler.setLevel(logging.DEBUG)
+    # 移除默认的处理器
+    logger.remove()
+    
+    # 添加新的文件处理器
+    logger.add(log_file, level="DEBUG", format="{time} - {name} - {level} - {message}")
 
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    file_handler.setFormatter(formatter)
-
-    if not logger.handlers:
-        logger.addHandler(file_handler)
+    logger.info("Logger is set up with log file: {}".format(log_file))
 
 
 @dataclass

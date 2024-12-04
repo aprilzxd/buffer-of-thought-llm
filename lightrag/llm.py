@@ -48,7 +48,9 @@ async def openai_complete_if_cache(
     api_key=None,
     **kwargs,
 ) -> str:
-    logger.info(f"model {model} \n\n base_url {base_url}")
+    
+    logger.error(f"model {model} \n\n base_url {base_url}")
+
     if api_key:
         os.environ["OPENAI_API_KEY"] = api_key
 
@@ -365,7 +367,9 @@ async def vllm_openai_format_model_if_cache(
         str: 模型的响应文本
     """
     # 移除不需要的参数
-    model = "llama3.1-8b"
+    logger.info(f'vllm_openai_format_model_if_cache base_url: {base_url}')
+    logger.info(f'vllm_openai_format_model_if_cache api_key: {api_key}')
+    logger.info(f'vllm_openai_format_model_if_cache model: {model}')
     kwargs.pop("max_tokens", None)
     kwargs.pop("response_format", None)
     
@@ -656,8 +660,6 @@ async def openai_embedding(
     )
     from loguru import logger
     logger.info(f"openai_async_client: {openai_async_client}")
-    logger.info(f"response: {response}")
-    logger.info(f"response.data: {response.data}")
     return np.array([dp.embedding for dp in response.data])
 
 

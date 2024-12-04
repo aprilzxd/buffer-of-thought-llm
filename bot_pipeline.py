@@ -30,6 +30,8 @@ class Pipeline:
     def get_respond(self,meta_prompt,user_prompt):
         if self.api:
             client = OpenAI(api_key=self.bot_api_key,base_url= self.bot_base_url)
+            logger.info(f"meta_prompt: {meta_prompt}")
+            logger.info(f"user_prompt: {user_prompt}")
             completion = client.chat.completions.create(
                 model=self.model_id,
                 messages=[
@@ -73,7 +75,7 @@ class BoT:
         self.bot_base_url = local_base_url
         self.pipeline = Pipeline(self.model_id,api_key=self.bot_api_key,base_url=self.bot_base_url,local_api=True)
 
-        self.meta_buffer = MetaBuffer(self.model_id,self.embedding_model,api_key=openai_api_key,base_url=openai_base_url,rag_dir=rag_dir)
+        self.meta_buffer = MetaBuffer(self.model_id,self.embedding_model,api_key=local_api_key,base_url=local_base_url,rag_dir=rag_dir)
 
         self.user_input = user_input
         # Only for test use, stay tuned for our update
@@ -107,8 +109,12 @@ class BoT:
 
     def buffer_manager(self):
         self.problem_solution_pair = self.user_input + self.result
+        logger.info(f"start thought distillation")
         self.thought_distillation()
+        logger.info(f"end thought distillation")
+        logger.info(f"start dynamic update")
         self.meta_buffer.dynamic_update(self.distilled_thought)
+        logger.info(f"end dynamic update")
 
     def thought_distillation(self):
         thought_distillation_prompt = """You are an expert in problem analysis and generalization. Your task is to distill high-level thought templates that could be used to solve the provided problem and solution pairs. An example thought template for a solution concentration problem is provided below. It should be noted that you should only return the thought template without any extra output.
@@ -129,7 +135,7 @@ Example thought template:
 Using the formula:
 50 × 16% ÷ 10% - 50 = 30 grams of water need to be added."""
         self.distilled_thought = self.pipeline.get_respond(thought_distillation_prompt, self.problem_solution_pair)
-        print('Distilled thought: ',self.distilled_thought)
+        logger.info(f'Distilled thought: {self.distilled_thought}')
 
     def reasoner_instantiation(self):
         # Temporay using selection method to select answer extract method
@@ -174,7 +180,7 @@ Your respond should follow the format below:
                     if self.count > 3:
                         break
                 self.final_result = self.inter_result 
-            print(f'The result of code execution: {self.final_result}')
+            logger.info(f'The result of code execution: {self.final_result}')
         else:
             self.final_result = self.result 
 
@@ -188,7 +194,7 @@ Your respond should follow the format below:
         self.problem_distillation()
         self.buffer_instantiation()
         self.buffer_manager()
-        print('Final results:',self.result)
+        logger.info(f'bot inference Final results: {self.result}')
         return self.result
     
     def bot_test(self):
