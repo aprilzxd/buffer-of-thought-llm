@@ -107,7 +107,7 @@ class BoT:
     def buffer_manager(self):
         self.problem_solution_pair = self.user_input + self.result
         self.thought_distillation()
-        self.meta_buffer.dynamic_update(self.distilled_thought)
+        return self.meta_buffer.dynamic_update(self.distilled_thought)
 
     def thought_distillation(self):
         thought_distillation_prompt = """You are an expert in problem analysis and generalization. Your task is to distill high-level thought templates that could be used to solve the provided problem and solution pairs. An example thought template for a solution concentration problem is provided below. It should be noted that you should only return the thought template without any extra output.
