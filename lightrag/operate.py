@@ -1042,7 +1042,7 @@ def combine_contexts(high_level_context, low_level_context):
     combined_entities_set = set(
         filter(None, hl_entities.strip().split("\n") + ll_entities.strip().split("\n"))
     )
-    combined_entities = "\n NEW_CHUNKS".join(combined_entities_set)
+    combined_entities = "\n".join(combined_entities_set)
 
     # Combine and deduplicate the relationships
     combined_relationships_set = set(
@@ -1057,7 +1057,7 @@ def combine_contexts(high_level_context, low_level_context):
     combined_sources_set = set(
         filter(None, hl_sources.strip().split("\n") + ll_sources.strip().split("\n"))
     )
-    combined_sources = "\n".join(combined_sources_set)
+    combined_sources = "\n NEW_CHUNKS".join(combined_sources_set)
 
     # Format the combined context
     return f"""
