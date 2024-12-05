@@ -12,7 +12,7 @@ parser.add_argument('--api_key',type=str,help='The api key of user')
 parser.add_argument('--base_url',type=str,default='https://api.openai.com/v1/',help='We also support Open AI-like chat/embeddings APIs')
 parser.add_argument('--rag_dir',type=str,default='./math',help='The path to save the meta buffer')
 parser.add_argument('--run_test',type=str,default=False,help='Whether this is a test run that doesn\'t update the meta buffer')
-parser.add_argument('--distill_correct',type=str,default=False,help='Whether we only distill the template only when the generated solution is correct.')
+parser.add_argument('--distill_correct', action='store_true', default=False, help='Whether we only distill the template only when the generated solution is correct.')
 args = parser.parse_args()
 
 llm_model = args.llm_model
@@ -40,8 +40,9 @@ bot = BoT(
     base_url = base_url,
     rag_dir = rag_dir
 )
-
+count = 0
 for line in (open(data_dir)):
+    count += 1
     input = json.loads(line)['question']
     user_input = prompt + input
     bot.update_input(user_input)
@@ -58,6 +59,8 @@ for line in (open(data_dir)):
     with open(f'{output_dir}/GSM8K_{output_name}_{timestamp_str}.jsonl', 'a+', encoding='utf-8') as file:
         json_str = json.dumps(tmp)
         file.write(json_str + '\n')
+    if count > 30:
+        break
 
 
 # Evaluation

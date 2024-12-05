@@ -1,8 +1,10 @@
 import os
 from lightrag import LightRAG, QueryParam
-from lightrag.llm import openai_complete_if_cache,openai_embedding,hf_model_complete
+from lightrag.llm import openai_complete_if_cache,openai_embedding,hf_model_complete, hf_embedding
 import numpy as np
 from lightrag.utils import EmbeddingFunc
+from transformers import AutoModel, AutoTokenizer
+
 
 class MetaBuffer:
     def __init__(self,llm_model,embedding_model,api_key=None,base_url="https://api.openai.com/v1/",rag_dir='./test'):
@@ -21,6 +23,15 @@ class MetaBuffer:
                 max_token_size=8192,
                 func=self.embedding_func
             )
+            # embedding_func=EmbeddingFunc(
+            #         embedding_dim=1024,
+            #         max_token_size=8192,
+            #         func=lambda texts: hf_embedding(
+            #             texts,
+            #             tokenizer=AutoTokenizer.from_pretrained("../hf_models/bge-m3"),
+            #             embed_model=AutoModel.from_pretrained("../hf_models/bge-m3")
+            #         )
+            #     ),
         )
 
     async def llm_model_func(self, prompt, system_prompt=None, history_messages=[], **kwargs) -> str:
@@ -43,7 +54,6 @@ class MetaBuffer:
         )
 
     def retrieve_and_instantiate(self,input):
-        # jingwen
         response, context = self.rag.query(input, param=QueryParam(mode="hybrid"))
         return response, context
 
