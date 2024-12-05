@@ -950,7 +950,7 @@ Comprehensive equation:
                     .replace("</system>", "")
                     .strip()
                 )
-            return response
+            return response, general_template
 
     if ll_keywords:
         low_level_context = await _build_local_query_context(
@@ -996,7 +996,7 @@ Comprehensive equation:
             .replace("</system>", "")
             .strip()
         )
-    return response
+    return response, context
 
 
 def combine_contexts(high_level_context, low_level_context):

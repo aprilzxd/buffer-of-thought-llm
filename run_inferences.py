@@ -45,16 +45,16 @@ for line in (open(data_dir)):
     input = json.loads(line)['question']
     user_input = prompt + input
     bot.update_input(user_input)
-    result = bot.bot_test()
+    result, context = bot.bot_test()
     # Dyanmic update strategy: only update metabuffer when the template is new and answer is correct
     if not run_test and distill_correct:
         if check_answer(json.loads(line)['ans'],result):
             print("@@@@ Selective update strategy @@@@")
-            bot.bot_update()
+            new_thought_template = bot.bot_update()
     if not run_test and not distill_correct:
         print("&&&& Naive update strategy &&&&")
-        bot.bot_update()
-    tmp = {'input':input,'result':result}
+        new_thought_template = bot.bot_update()
+    tmp = {'input':input,'result':result, 'new_thought_template': new_thought_template, 'used_thought_template': context}
     with open(f'{output_dir}/GSM8K_{output_name}_{timestamp_str}.jsonl', 'a+', encoding='utf-8') as file:
         json_str = json.dumps(tmp)
         file.write(json_str + '\n')

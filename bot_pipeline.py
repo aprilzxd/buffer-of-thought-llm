@@ -97,7 +97,7 @@ class BoT:
     def buffer_instantiation(self):
         self.buffer_prompt = "You are an expert in problem analysis and can apply previous problem-solving approaches to new issues. The user will provide a specific task description and a meta buffer that holds multiple thought templates that will help to solve the problem. Your goal is to first extract most relevant thought template from meta buffer, analyze the user's task and generate a specific solution based on the thought template. Give a final answer that is easy to extract from the text."
         input = self.buffer_prompt + self.distilled_information
-        self.result = self.meta_buffer.retrieve_and_instantiate(input)
+        self.result, self.context = self.meta_buffer.retrieve_and_instantiate(input)
         print(self.result)
 
     def buffer_manager(self):
@@ -189,7 +189,7 @@ Your respond should follow the format below:
     def bot_test(self):
         self.problem_distillation()
         self.buffer_instantiation()
-        return self.result
+        return self.result, self.context
 
     def bot_update(self):
-        self.buffer_manager()
+        return self.buffer_manager()
