@@ -11,7 +11,7 @@ parser.add_argument('--embedding_model',type=str,default='text-embedding-3-large
 parser.add_argument('--api_key',type=str,help='The api key of user')
 parser.add_argument('--base_url',type=str,default='https://api.openai.com/v1/',help='We also support Open AI-like chat/embeddings APIs')
 parser.add_argument('--rag_dir',type=str,default='./math',help='The path to save the meta buffer')
-parser.add_argument('--run_test',type=str,default=False,help='Whether this is a test run that doesn\'t update the meta buffer')
+parser.add_argument('--run_test',action='store_true',default=False,help='Whether this is a test run that doesn\'t update the meta buffer')
 parser.add_argument('--distill_correct', action='store_true', default=False, help='Whether we only distill the template only when the generated solution is correct.')
 args = parser.parse_args()
 
