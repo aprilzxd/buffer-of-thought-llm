@@ -264,6 +264,7 @@ try:
                     continue
                 
                 # 动态更新策略
+                new_thought_template = None
                 if not run_test:
                     if distill_correct:
                         if 'ans' not in input_data:
@@ -341,8 +342,7 @@ try:
         pbar.close()  # 确保进度条正确关闭
 
 except Exception as e:
-    logger.error(f"Fatal error in main process: {str(e)}")
-    logger.exception("Full traceback:")
+    logger.exception(f"Fatal error in main process: {str(e)}")
     raise
 
 finally:
