@@ -38,7 +38,7 @@ def validator(data_path, result_filepath, output_filepath):
                 # else:
                     # output_file.write(f"{eval_result} | {int(true_y)} | {pred}\n")
                 total += 1
-                output_file.write(f"{eval_result} | {int(true_y)} | {pred}\n")
+                output_file.write(f"{eval_result} | {int(true_y)} | {pred}\n | {question}\n")
 
         print(f'#Question: {total}, #Correct: {correct}, Acc: {correct/total},')
         output_file.write(f'#Question: {total}, #Correct: {correct}, Acc: {correct/total},')       
