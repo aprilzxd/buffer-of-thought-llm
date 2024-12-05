@@ -6,4 +6,5 @@ python run_inferences.py \
 --embedding_model 'text-embedding-3-large' \
 --openai_base_url 'https://www.gpt-plus.top/v1' \
 --rag_dir 'results/Qwen2.5-7B-Instruct_selective-distill=false' \
---distill_correct False  
+--distill_correct False  \
+--run_test True

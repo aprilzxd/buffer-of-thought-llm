@@ -7,4 +7,4 @@ python run_inferences.py \
 --openai_base_url 'https://www.gpt-plus.top/v1' \
 --rag_dir 'results/Qwen2.5-7B-Instruct_selective-distill=true' \
 --distill_correct True  \
---run_test Trues
+--run_test True
