@@ -951,7 +951,7 @@ Comprehensive equation:
                     .replace("</system>", "")
                     .strip()
                 )
-            return response
+            return response, general_template
 
     if ll_keywords:
         low_level_context = await _build_local_query_context(
@@ -997,7 +997,7 @@ Comprehensive equation:
             .replace("</system>", "")
             .strip()
         )
-    return response
+    return response, context
 
 
 def combine_contexts(high_level_context, low_level_context):
@@ -1042,7 +1042,7 @@ def combine_contexts(high_level_context, low_level_context):
     combined_entities_set = set(
         filter(None, hl_entities.strip().split("\n") + ll_entities.strip().split("\n"))
     )
-    combined_entities = "\n".join(combined_entities_set)
+    combined_entities = "\n NEW_CHUNKS".join(combined_entities_set)
 
     # Combine and deduplicate the relationships
     combined_relationships_set = set(

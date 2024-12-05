@@ -254,10 +254,10 @@ try:
                 
                 bot.update_input(user_input)
                 try:
-                    result = bot.bot_test()
+                    result, context = bot.bot_test()
                 except Exception as e:
                     logger.error(f"Error in bot_test at line {line_number}: {str(e)}")
-                    result = bot.bot_test()
+                    result, context = bot.bot_test()
                 
                 if result is None:
                     logger.warning(f"Received None result for example {total_count}")
@@ -273,10 +273,10 @@ try:
                         if check_answer(input_data['ans'], result):
                             logger.info(f"Answer correct for example {total_count}")
                             correct_count += 1
-                            bot.bot_update()
+                            new_thought_template = bot.bot_update()
                     else:
                         logger.info("Using naive update strategy")
-                        bot.bot_update()
+                        new_thought_template = bot.bot_update()
                 
                 # 更新模板数量（添加错误处理）
                 try:
@@ -301,7 +301,9 @@ try:
                     'total': total_count,
                     'accuracy': current_accuracy,
                     'templates': template_count,
-                    'line_number': line_number  # 添加行号信息
+                    'line_number': line_number,  # 添加行号信息
+                    'new_thought_template': new_thought_template, 
+                    'used_thought_template': context
                 }
                 
                 logger.info(f"tmp tmp_dict {tmp}")

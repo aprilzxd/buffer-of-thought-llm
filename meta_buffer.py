@@ -56,21 +56,23 @@ class MetaBuffer:
         )
 
     def retrieve_and_instantiate(self,input):
-        response = self.rag.query(input, param=QueryParam(mode="hybrid"))
-        return response
+        response, context = self.rag.query(input, param=QueryParam(mode="hybrid"))
+        return response, context
 
     def dynamic_update(self,thought_template):
         prompt = "Find most relevant thought template in the MetaBuffer according to the given thought template, and Determine whether there is a fundamental difference in the problem-solving approach between this and the most similar thought template in MetaBuffer. If there is, output \"True.\" If there is no fundamental difference, or if the two thought templates are highly similar, output \"False.\""
         input = prompt + thought_template
 
         # Perform naive search
-        response = self.rag.query(input, param=QueryParam(mode="hybrid"))
+        response, _ = self.rag.query(input, param=QueryParam(mode="hybrid"))
         logger.info(response)
         if self.extract_similarity_decision(response):
             logger.info('MetaBuffer Updated!')
             self.rag.insert(thought_template)
+            return thought_template
         else:
             logger.info('No need to Update!')
+            return 'None'
 
     def extract_similarity_decision(self,text):
         """
