@@ -361,7 +361,7 @@ logger.info(f"- Final Template Count: {template_count}")
 # 评估
 logger.info("Starting evaluation...")
 result_path = output_file  # 使用之前定义的输出文件路径
-eval_path = f'{output_dir}/GSM8K_{output_name}_{timestamp_str}_eval.txt'
+eval_path = f'{output_dir}/GSM8K_{local_llm_model_id}_{output_name}_distill_{distill_correct}_{timestamp_str}_eval.txt'
 try:
     validator(data_dir, result_path, eval_path)
     logger.success("Evaluation completed successfully")
