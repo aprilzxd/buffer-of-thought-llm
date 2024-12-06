@@ -7,32 +7,25 @@ from openai import OpenAI
 
 from loguru import logger
 class Pipeline:
-    def __init__(self,model_id,api_key=None,base_url='https://api.openai.com/v1/',local_api=True):
-        self.api = local_api
-        self.local = False
-        self.bot_base_url = base_url
-        self.bot_api_key = api_key
+    def __init__(self, api=True, model_id=None, bot_api_key=None, bot_base_url=None):
+        self.api = api
         self.model_id = model_id
-        logger.info(f"model_id: {self.model_id}")
-        
-        if 'Meta' in self.model_id:
-            self.local = True
-            self.pipeline = transformers.pipeline(
-                "text-generation",
-                model=self.model_id,
-                model_kwargs={"torch_dtype": torch.bfloat16},
-                device_map = 'auto'
+        self.bot_api_key = bot_api_key
+        self.bot_base_url = bot_base_url
+        # 在初始化时创建 OpenAI 客户端
+        if self.api:
+            self.client = OpenAI(
+                api_key=self.bot_api_key,
+                base_url=self.bot_base_url
             )
         else:
-            self.api = True
-            self.bot_api_key = api_key
+            self.client = None
 
-    def get_respond(self,meta_prompt,user_prompt):
+    def get_respond(self, meta_prompt, user_prompt):
         if self.api:
-            client = OpenAI(api_key=self.bot_api_key,base_url= self.bot_base_url)
             logger.info(f"meta_prompt: {meta_prompt}")
             logger.info(f"user_prompt: {user_prompt}")
-            completion = client.chat.completions.create(
+            completion = self.client.chat.completions.create(
                 model=self.model_id,
                 messages=[
                     {"role": "system", "content": meta_prompt},
