@@ -914,8 +914,8 @@ async def hybrid_query(
             ll_keywords = ", ".join(ll_keywords)
         # Handle parsing error (return default template)
         except:
-            return """### Problem Type 2: Word Problem
-
+            print("000000000000000000000000")
+            general_template = """### Problem Type 2: Word Problem
 **Definition**: Translate a word problem into mathematical expressions and solve it by extracting relevant quantities and operations from the text.
 
 **Quantitative Relationships**:
@@ -932,6 +932,25 @@ async def hybrid_query(
 
 Comprehensive equation:  
 3 + 2 = 5"""
+            sys_prompt_temp = PROMPTS["rag_response"]
+            sys_prompt = sys_prompt_temp.format(
+                context_data=general_template, response_type=query_param.response_type
+            )
+            response = await use_model_func(
+                query,
+                system_prompt=sys_prompt,
+            )
+            if len(response) > len(sys_prompt):
+                response = (
+                    response.replace(sys_prompt, "")
+                    .replace("user", "")
+                    .replace("model", "")
+                    .replace(query, "")
+                    .replace("<system>", "")
+                    .replace("</system>", "")
+                    .strip()
+                )
+            return response, general_template
 
     if ll_keywords:
         low_level_context = await _build_local_query_context(
@@ -977,7 +996,7 @@ Comprehensive equation:
             .replace("</system>", "")
             .strip()
         )
-    return response
+    return response, context
 
 
 def combine_contexts(high_level_context, low_level_context):

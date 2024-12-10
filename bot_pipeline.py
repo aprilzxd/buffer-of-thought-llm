@@ -83,7 +83,9 @@ class BoT:
     def problem_distillation(self):
         print(f'User prompt:{self.user_input}')
         self.distilled_information = self.pipeline.get_respond(meta_distiller_prompt, self.user_input)
+        print('----------Information distillation (start)----------------')
         print(f'Distilled information:{self.distilled_information}')
+        print('----------Information distillation (end)----------------')
 
     def buffer_retrieve(self):
         # For initial test use, we will later update the embedding retrieval version to support more, trail version
@@ -97,13 +99,15 @@ class BoT:
     def buffer_instantiation(self):
         self.buffer_prompt = "You are an expert in problem analysis and can apply previous problem-solving approaches to new issues. The user will provide a specific task description and a meta buffer that holds multiple thought templates that will help to solve the problem. Your goal is to first extract most relevant thought template from meta buffer, analyze the user's task and generate a specific solution based on the thought template. Give a final answer that is easy to extract from the text."
         input = self.buffer_prompt + self.distilled_information
-        self.result = self.meta_buffer.retrieve_and_instantiate(input)
+        self.result, self.context = self.meta_buffer.retrieve_and_instantiate(input)
+        print('----------Result of buffer instantiation (start)----------------')
         print(self.result)
+        print('----------Result of buffer instantiation (end)----------------')
 
     def buffer_manager(self):
         self.problem_solution_pair = self.user_input + self.result
         self.thought_distillation()
-        self.meta_buffer.dynamic_update(self.distilled_thought)
+        return self.meta_buffer.dynamic_update(self.distilled_thought)
 
     def thought_distillation(self):
         thought_distillation_prompt = """You are an expert in problem analysis and generalization. Your task is to distill high-level thought templates that could be used to solve the provided problem and solution pairs. An example thought template for a solution concentration problem is provided below. It should be noted that you should only return the thought template without any extra output.
@@ -189,4 +193,7 @@ Your respond should follow the format below:
     def bot_test(self):
         self.problem_distillation()
         self.buffer_instantiation()
-        return self.result
+        return self.result, self.context
+
+    def bot_update(self):
+        return self.buffer_manager()
